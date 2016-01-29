@@ -1,5 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include "Button.h"
 
 const char* ssid = "SSID of your WiFi";
 const char* password = "Password of your WiFi";
@@ -8,12 +9,14 @@ const char* mqtt_server = "hostname";
 int ledRedPin = 13;
 int ledGreenPin = 12;
 int ledBluePin = 14;
+#define BUTTON_PIN 5
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 long lastMsg = 0;
 char msg[50];
 int value = 0;
+Button button(BUTTON_PIN);
 
 void setup_wifi() {
 
@@ -111,6 +114,10 @@ void loop() {
 
   if (!client.connected()) {
     reconnect();
+  }
+
+  if (button.released()) {
+    // TODO Switch on light
   }
 
   client.loop();
