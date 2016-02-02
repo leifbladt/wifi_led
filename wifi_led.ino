@@ -1,107 +1,24 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include "Button.h"
-
-const char* ssid = "SSID of your WiFi";
-const char* password = "Password of your WiFi";
-const char* mqtt_server = "hostname";
-
-#define RED_PIN 13
-#define GREEN_PIN 12
-#define BLUE_PIN 14
-#define BUTTON_PIN 5
-
-class LEDStripe {
-  public:
-    LEDStripe(const int redPin, const int greenPin, const int bluePin) {
-      _redPin = redPin;
-      _greenPin = greenPin;
-      _bluePin = bluePin;
-
-       setOutputMode();
-    }
-
-    void switchOn() {
-      Serial.print("switch off");
-
-      _redPin = 127;
-      _greenPin = 127;
-      _bluePin = 127;
-      updateValues();
-    }
-
-    void switchOff() {
-      Serial.print("switch off");
-
-      _redPin = 0;
-      _greenPin = 0;
-      _bluePin = 0;
-      updateValues();
-    }
-
-    void setRed(int value) {
-      Serial.print("red value: ");
-      Serial.println(value);
-      
-      _redValue = value;
-      updateValues();
-    }
-
-    void setGreen(int value) {
-      Serial.print("green value: ");
-      Serial.println(value);
-      
-      _greenValue = value;
-      updateValues();
-    }
-
-    void setBlue(int value) {
-      Serial.print("blue value: ");
-      Serial.println(value);
-      
-      _blueValue = value;
-      updateValues();
-    }
-
-  private:
-    int _redPin;
-    int _greenPin;
-    int _bluePin;
-
-    int _redValue = 0;
-    int _greenValue = 0;
-    int _blueValue = 0;
-
-    void updateValues() {
-      analogWrite(_redPin, _redValue);
-      analogWrite(_greenPin, _greenValue);
-      analogWrite(_bluePin, _blueValue);
-    }
-
-    void setOutputMode() {
-      pinMode(_redPin, OUTPUT);
-      pinMode(_greenPin, OUTPUT);
-      pinMode(_bluePin, OUTPUT);
-    }
-};
+#include "LED.h"
+#include "LEDStripe.h"
 
 WiFiClient espClient;
 PubSubClient client(espClient);
-long lastMsg = 0;
-char msg[50];
-int value = 0;
 Button button(BUTTON_PIN);
 LEDStripe stripe(RED_PIN, GREEN_PIN, BLUE_PIN);
+LED statusLED(LED_PIN);
 
 void setup_wifi() {
 
-  delay(10);
+  delay(100);
   // We start by connecting to a WiFi network
   Serial.println();
   Serial.print("Connecting to ");
-  Serial.println(ssid);
+  Serial.println(SSID);
 
-  WiFi.begin(ssid, password);
+  WiFi.begin(SSID, WIFI_KEY);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -115,42 +32,51 @@ void setup_wifi() {
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
+
+  // Power off
+  // 0
+  // Power on
+  // 1
+  // Power on with color values
+  // 1;15;224;0
+
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
-  String p = "";
-  for (int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-    p += (char)payload[i];
-  }
-  Serial.println();
 
-  String channel = String(topic);
-  int value = int(p.toInt() * 2.55 * 4);
-  if (channel.endsWith("red")) {
-    stripe.setRed(value);
-  } else if (channel.endsWith("green")) {
-    stripe.setGreen(value);
-  } else if (channel.endsWith("blue")) {
-    stripe.setBlue(value);
+  if (length == 0) {
+    return;
+  }
+
+  if ((char)payload[0] == '0') {
+    stripe.powerOff();
+  } else if (length == 1) {
+    stripe.powerOn();
+  } else {
+    // TODO Extract values
+    //  int value = int(p.toInt() * 2.55 * 4);
   }
 }
 
-
 void setup() {
-  pinMode(BUILTIN_LED, OUTPUT);
-  digitalWrite(BUILTIN_LED, HIGH);
+  pinMode(BUTTON_PIN, INPUT);
+
+  statusLED.powerOff();
 
   Serial.begin(115200);
   setup_wifi();
-  client.setServer(mqtt_server, 1883);
+  client.setServer(MQTT_SERVER, 1883);
   client.setCallback(callback);
-  client.publish("home/led/1/state", "OFF");
+
+  // TODO Set initial state
 }
 
 void reconnect() {
+  // TODO Add last will
+
+  // TODO Make it without delay
   // Loop until we're reconnected
-  digitalWrite(BUILTIN_LED, HIGH);
+  statusLED.powerOff();
 
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
@@ -158,19 +84,19 @@ void reconnect() {
     if (client.connect("ESP8266Client")) {
       Serial.println("connected");
       // Once connected, publish an announcement...
-      client.publish("home/led/1/state", "0");
+      client.publish(TOPIC_STATE, "0");
       // ... and resubscribe
-      client.subscribe("home/led/1/+");
+      client.subscribe(TOPIC_COMMAND);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
+      Serial.println(" try again in 3 seconds");
+      // Wait 3 seconds before retrying
+      delay(3000);
     }
   }
 
-  digitalWrite(BUILTIN_LED, LOW);
+  statusLED.powerOn();
 }
 
 void loop() {
@@ -180,7 +106,7 @@ void loop() {
   }
 
   if (button.released()) {
-    stripe.switchOff();
+    stripe.togglePower();
   }
 
   client.loop();
