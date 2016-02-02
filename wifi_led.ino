@@ -3,6 +3,7 @@
 #include "Button.h"
 #include "LED.h"
 #include "LEDStripe.h"
+#include "Configuration.h"
 
 WiFiClient espClient;
 PubSubClient client(espClient);
