@@ -72,6 +72,10 @@ void LEDStripe::setBlue(int value) {
   updateValues();
 }
 
+boolean LEDStripe::getPower() {
+  return _power;
+}
+
 void LEDStripe::updateValues() {
   analogWrite(_redPin, _power ? _redValue : 0);
   analogWrite(_greenPin, _power ? _greenValue : 0);

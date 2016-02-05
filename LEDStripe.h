@@ -19,6 +19,8 @@ class LEDStripe {
 
     void setBlue(int value);
 
+    boolean getPower();
+    
     // TODO Blink, Fade, ...
 
   private:

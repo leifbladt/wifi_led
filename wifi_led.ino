@@ -75,14 +75,19 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   if (message[0] == '0') {
     stripe.powerOff();
+    client.publish(TOPIC_STATE, "0");
   } else if (message[0] == '1') {
     if (length == 1) {
       stripe.powerOn();
+      client.publish(TOPIC_STATE, "1");
     } else {
-      int red = atoi(subStr(message, delimiter, 1)) * 4;
-      int green = atoi(subStr(message, delimiter, 2)) * 4;
-      int blue = atoi(subStr(message, delimiter, 3)) * 4;
-      stripe.setColor(red, green, blue);
+      int red = atoi(subStr(message, delimiter, 1));
+      int green = atoi(subStr(message, delimiter, 2));
+      int blue = atoi(subStr(message, delimiter, 3));
+      stripe.setColor(red * 4, green * 4, blue * 4);
+      char state[length];
+      sprintf(state, "1;%d;%d;%d", red, green, blue);
+      client.publish(TOPIC_STATE, state);
     }
   }
 }
@@ -135,7 +140,10 @@ void loop() {
   }
 
   if (button.released()) {
+    // TODO Extract into button callback method
     stripe.togglePower();
+    // TODO Send complete RGB value when switching on
+    client.publish(TOPIC_STATE, stripe.getPower() ? "1" : "0");
   }
 
   client.loop();
