@@ -63,6 +63,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     message[i] = (char)payload[i];
   }
 
+  // TODO message contains garbage at the end
   Serial.print("Message arrived [");
   Serial.print(message);
   Serial.print(", length: ");
