@@ -32,6 +32,23 @@ void setup_wifi() {
   Serial.println(WiFi.localIP());
 }
 
+char* subStr (char* str, char* delim, int index) {
+  char *act, *sub, *ptr;
+  static char copy[15];
+  int i;
+
+  // Since strtok consumes the first arg, make a copy
+  strcpy(copy, str);
+
+  for (i = 0, act = copy; i <= index; i++, act = NULL) {
+    sub = strtok_r(act, delim, &ptr);
+    if (sub == NULL) {
+      break;
+    }
+  }
+  return sub;
+}
+
 void callback(char* topic, byte* payload, unsigned int length) {
 
   // Power off
@@ -40,22 +57,33 @@ void callback(char* topic, byte* payload, unsigned int length) {
   // 1
   // Power on with color values
   // 1;15;224;0
+  char delimiter[2] = ";";
+  char message[length];
+  for (int i = 0; i < length; i++) {
+    message[i] = (char)payload[i];
+  }
 
   Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
+  Serial.print(message);
+  Serial.print(", length: ");
+  Serial.print(length);
+  Serial.println("] ");
 
   if (length == 0) {
     return;
   }
 
-  if ((char)payload[0] == '0') {
+  if (message[0] == '0') {
     stripe.powerOff();
-  } else if (length == 1) {
-    stripe.powerOn();
-  } else {
-    // TODO Extract values
-    //  int value = int(p.toInt() * 2.55 * 4);
+  } else if (message[0] == '1') {
+    if (length == 1) {
+      stripe.powerOn();
+    } else {
+      int red = atoi(subStr(message, delimiter, 1)) * 4;
+      int green = atoi(subStr(message, delimiter, 2)) * 4;
+      int blue = atoi(subStr(message, delimiter, 3)) * 4;
+      stripe.setColor(red, green, blue);
+    }
   }
 }
 
