@@ -134,7 +134,7 @@ void reconnect() {
 
   // TODO Make it without delay
   // Loop until we're reconnected
-  statusLED.powerOff();
+  statusLED.blink(2);
 
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
@@ -171,6 +171,8 @@ void loop() {
   }
 
   client.loop();
+
+  statusLED.loop();
 
   ArduinoOTA.handle();
 }
