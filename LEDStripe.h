@@ -26,9 +26,10 @@ class LEDStripe {
     int _greenPin;
     int _bluePin;
 
-    int _redValue = 0;
-    int _greenValue = 0;
-    int _blueValue = 0;
+    int _redValue = 127;
+    int _greenValue = 127;
+    int _blueValue = 127;
+    boolean _power = false;
 
     void updateValues();
 

@@ -14,29 +14,34 @@ LEDStripe::LEDStripe(const int redPin, const int greenPin, const int bluePin) {
 void LEDStripe::powerOn() {
   Serial.println("switch on");
 
-  _redValue = 127;
-  _greenValue = 127;
-  _blueValue = 127;
+  _power = true;
   updateValues();
 }
 
 void LEDStripe::powerOff() {
   Serial.println("switch off");
 
-  _redValue = 0;
-  _greenValue = 0;
-  _blueValue = 0;
+  _power = false;
   updateValues();
 }
 
 void LEDStripe::togglePower() {
   Serial.println("toggle power");
 
-  powerOn();
-  // TODO Implement me!
+  _power = !_power;
+  updateValues();
 }
 
 void LEDStripe::setColor(int red, int green, int blue) {
+  Serial.print("set color (");
+  Serial.print(red);
+  Serial.print("/");
+  Serial.print(green);
+  Serial.print("/");
+  Serial.print(blue);
+  Serial.println(")");
+
+  _power = true;
   _redValue = red;
   _greenValue = green;
   _blueValue = blue;
@@ -68,9 +73,9 @@ void LEDStripe::setBlue(int value) {
 }
 
 void LEDStripe::updateValues() {
-  analogWrite(_redPin, _redValue);
-  analogWrite(_greenPin, _greenValue);
-  analogWrite(_bluePin, _blueValue);
+  analogWrite(_redPin, _power ? _redValue : 0);
+  analogWrite(_greenPin, _power ? _greenValue : 0);
+  analogWrite(_bluePin, _power ? _blueValue : 0);
 }
 
 void LEDStripe::setOutputMode() {
